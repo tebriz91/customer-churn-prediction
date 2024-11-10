@@ -1,0 +1,1 @@
+"""Beautiful Code Hackathon package."""
