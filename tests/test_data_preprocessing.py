@@ -138,7 +138,8 @@ def test_preprocess_data(sample_data):
 
     for col in numeric_cols:
         scaled_col = processed_df[col]
-        assert abs(scaled_col.mean()) < 1e-5, f"Mean of {col} is not close to 0."
+        msg = f"Mean of {col} is not close to 0."
+        assert abs(scaled_col.mean()) < 1e-5, msg
         assert abs(scaled_col.std() - 1.0) < 1e-3, (
             "Standard deviation is not close to 1."
         )
