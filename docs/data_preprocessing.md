@@ -206,74 +206,9 @@ Potential enhancements:
 
 ## Testing
 
-The preprocessing pipeline includes a comprehensive test suite with the following updates:
+### Test Configuration
 
-### Test Components
-
-#### 1. Test Fixtures
-
-- `sample_data`: Creates a realistic dataset with known characteristics including:
-  - Numeric and categorical features
-  - Controlled missing values
-  - Known outliers
-  - Balanced and imbalanced class distributions
-
-#### 2. Basic Functionality Tests
-
-- `test_load_data`: Validates CSV data loading
-- `test_analyze_data`: Checks data analysis and visualization generation
-- `test_handle_missing_values`: Verifies missing value imputation strategies
-- `test_handle_outliers`: Ensures proper outlier detection and handling
-
-#### 3. Pipeline Tests
-
-- `test_preprocess_data`: Validates the complete preprocessing pipeline
-- `test_split_data`: Checks data splitting functionality
-- `test_split_data_stratification`: Verifies stratified splitting for imbalanced data
-
-#### 4. Quality Assurance Tests
-
-- `test_data_leakage`: Ensures no data leakage between train and test sets
-- `test_reproducibility`: Validates result reproducibility with fixed random states
-
-#### 5. Code Quality Tests
-
-- **Line Length Compliance**:
-  - All code lines are limited to 79 characters
-  - Long strings are properly formatted using line continuation
-  - Warning and error messages are wrapped appropriately
-
-- **Standard Deviation Tests**:
-  - Numeric scaling tests use appropriate precision (1e-3)
-  - Mean tests use appropriate precision (1e-5)
-  - Clear error messages for failed assertions
-
-### Running Tests
-
-1. Install test dependencies with uv:
-
-```bash
-# Install main dependencies
-uv pip install -e .
-
-# Install test dependencies
-uv pip install pytest pytest-cov
-```
-
-2. Execute the test suite:
-
-```bash
-# Run all tests with coverage
-pytest -v --cov=beautifulcode
-
-# Run specific test file
-pytest tests/test_data_preprocessing.py -v
-
-# Run with detailed coverage report
-pytest -v --cov=beautifulcode --cov-report=term-missing
-```
-
-The project uses the following test configuration in pyproject.toml:
+The project uses pytest with coverage reporting. Configuration is defined in `pyproject.toml`:
 
 ```toml
 [tool.pytest.ini_options]
@@ -283,46 +218,112 @@ addopts = "-v --cov=beautifulcode"
 pythonpath = ["src"]
 ```
 
-### Test Best Practices
+### Running Tests
 
-The test suite follows these best practices:
+To run the test suite:
 
-1. **Test Data Management**
-   - Uses fixtures for consistent test data
-   - Includes edge cases and boundary conditions
-   - Simulates real-world data scenarios
+```bash
+pytest
+```
 
-2. **Quality Assurance**
-   - Checks for data leakage
-   - Ensures reproducibility
-   - Validates data integrity throughout the pipeline
+This will:
 
-3. **Test Coverage**
+- Run all tests with verbose output (-v)
+- Generate coverage report for beautifulcode package
+- Use test discovery in the tests/ directory
+
+### Test Components
+
+The test suite in `tests/test_data_preprocessing.py` includes:
+
+1. **Data Loading Tests**
+   - Validates CSV file loading
+   - Handles missing file errors
+   - Tests error conditions
+
+2. **Data Analysis Tests**
+   - Verifies visualization generation
+   - Checks statistical calculations
+   - Tests output directory creation
+
+3. **Missing Value Tests**
+   - Validates median imputation for numeric columns
+   - Tests mode imputation for categorical columns
+   - Verifies complete handling of missing values
+
+4. **Outlier Tests**
+   - Tests IQR-based outlier detection
+   - Verifies outlier capping
+   - Validates statistics calculation
+
+5. **Preprocessing Pipeline Tests**
+   - Tests complete data preprocessing workflow
+   - Validates scaling results
+   - Checks categorical encoding
+
+6. **Data Splitting Tests**
+   - Tests train/test splitting
+   - Validates stratification
+   - Checks different test size ratios
+
+### Test Coverage
+
+Coverage reporting is handled automatically through pytest-cov. The coverage report shows:
+- Line coverage
+- Branch coverage
+- Missing lines
+- Overall coverage percentage
+
+### Test Fixtures
+
+The test suite uses a sample dataset fixture that provides:
+- Realistic customer data structure
+- Known missing values
+- Controlled outliers
+- Both numeric and categorical features
+
+### Best Practices
+
+1. **Test Independence**
+   - Each test can run independently
+   - Tests don't rely on external data
+   - Clean state between tests
+
+2. **Comprehensive Testing**
    - Tests both success and error paths
-   - Includes parameterized tests for different scenarios
-   - Covers all main functionality components
+   - Covers edge cases
+   - Validates all main functionality
 
-4. **Documentation**
-   - Clear test names and descriptions
-   - Documented test fixtures and utilities
-   - Example usage and expected outcomes
+3. **Clear Test Names**
+   - Descriptive test function names
+   - Clear test purpose documentation
+   - Well-organized test structure
 
-### Test Maintenance
+4. **Assertions**
+   - Specific assertion messages
+   - Appropriate tolerance for floating-point comparisons
+   - Validates both data types and values
+
+### Maintaining Tests
 
 When modifying the preprocessing pipeline:
+1. Run the full test suite
+2. Update tests for new functionality
+3. Maintain test coverage
+4. Update test documentation
 
-1. Run the full test suite to ensure no regressions
-2. Add tests for new functionality
-3. Update existing tests if requirements change
-4. Maintain test documentation
+### Common Test Commands
 
-### Continuous Integration
+```bash
+# Run all tests
+pytest
 
-The test suite is designed to be run in CI/CD pipelines with:
+# Run specific test file
+pytest tests/test_data_preprocessing.py
 
-- Automated test execution
-- Coverage reporting
-- Linting checks
-- Documentation validation
+# Run specific test
+pytest tests/test_data_preprocessing.py::test_load_data
 
-For detailed test implementation, refer to `tests/test_data_preprocessing.py`.
+# Show coverage report
+pytest --cov-report term-missing
+```
