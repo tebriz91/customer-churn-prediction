@@ -1,4 +1,7 @@
-CustomerID,NumTransactions,Tenure,MonthlyCharges,TotalCharges,Churn
-1,34,5,70.5,352.5,0
-2,10,3,80.0,240.0,1
-3,45,10,56.7,567.0,0
+CustomerID,Age,Gender,Tenure,Balance,NumOfProducts,HasCrCard,IsActiveMember,EstimatedSalary,CreditScore,Geography,NumTransactions,MonthlyCharges,TotalCharges,Churn
+1,45,M,5,45000.50,2,1,1,75000.00,680,USA,34,70.5,352.5,0
+2,32,F,3,12500.75,1,1,0,45000.00,590,Canada,10,80.0,240.0,1
+3,58,M,10,78900.25,3,1,1,120000.00,750,USA,45,56.7,567.0,0
+4,27,F,2,,1,0,1,35000.00,620,Mexico,8,45.0,90.0,1
+5,41,M,7,52000.00,2,1,1,85000.00,,USA,28,65.8,460.6,0
+6,35,F,4,null,2,1,0,55000.00,680,Canada,15,75.5,302.0,1
