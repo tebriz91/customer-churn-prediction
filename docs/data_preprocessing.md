@@ -269,6 +269,7 @@ The test suite in `tests/test_data_preprocessing.py` includes:
 ### Test Coverage
 
 Coverage reporting is handled automatically through pytest-cov. The coverage report shows:
+
 - Line coverage
 - Branch coverage
 - Missing lines
@@ -277,6 +278,7 @@ Coverage reporting is handled automatically through pytest-cov. The coverage rep
 ### Test Fixtures
 
 The test suite uses a sample dataset fixture that provides:
+
 - Realistic customer data structure
 - Known missing values
 - Controlled outliers
@@ -307,6 +309,7 @@ The test suite uses a sample dataset fixture that provides:
 ### Maintaining Tests
 
 When modifying the preprocessing pipeline:
+
 1. Run the full test suite
 2. Update tests for new functionality
 3. Maintain test coverage
