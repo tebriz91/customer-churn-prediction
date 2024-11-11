@@ -53,11 +53,20 @@ def analyze_data(df: pd.DataFrame, output_dir: str = "data") -> pd.DataFrame:
     plt.close()
 
     # Distribution plots for numeric features
-    plt.figure(figsize=(15, 10))
-    for i, col in enumerate(numeric_cols, 1):
-        plt.subplot(3, 3, i)
-        sns.histplot(df[col].dropna(), kde=True)
-        plt.title(f"{col} Distribution")
+    numeric_columns = df.select_dtypes(include=["int64", "float64"]).columns
+    n_cols = len(numeric_columns)
+
+    # Вычисляем оптимальное количество строк и столбцов для графиков
+    n_rows = (n_cols + 2) // 3  # Округляем вверх при делении на 3
+
+    plt.figure(figsize=(15, 5 * n_rows))
+
+    for i, column in enumerate(numeric_columns, 1):
+        plt.subplot(n_rows, 3, i)
+        sns.histplot(data=df, x=column, kde=True)
+        plt.title(f"Distribution of {column}")
+        plt.xticks(rotation=45)
+
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "numeric_distributions.png"))
     plt.close()
