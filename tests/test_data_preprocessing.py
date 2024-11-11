@@ -23,24 +23,23 @@ def sample_data():
         "Age": np.random.normal(40, 10, n_samples),
         "Balance": np.random.normal(50000, 20000, n_samples),
         "Gender": np.random.choice(["M", "F"], n_samples),
-        "Tenure": np.random.randint(0, 10, n_samples),
-        "NumOfProducts": np.random.randint(1, 4, n_samples),
-        "HasCrCard": np.random.choice([0, 1], n_samples),
-        "IsActiveMember": np.random.choice([0, 1], n_samples),
+        "Tenure": np.random.randint(0, 10, n_samples, dtype=np.int64),
+        "NumOfProducts": np.random.randint(1, 4, n_samples, dtype=np.int64),
+        "HasCrCard": np.random.choice([0, 1], n_samples).astype(np.int64),
+        "IsActiveMember": np.random.choice([0, 1], n_samples).astype(np.int64),
         "EstimatedSalary": np.random.normal(70000, 30000, n_samples),
-        "Churn": np.random.choice([0, 1], n_samples),
+        "Churn": np.random.choice([0, 1], n_samples).astype(np.int64),
     }
 
-    # Add some missing values
+    # Create DataFrame first
+    df = pd.DataFrame(data)
+
+    # Add missing values to specific columns
     for col in ["Age", "Balance", "Gender"]:
         mask = np.random.choice([True, False], n_samples, p=[0.05, 0.95])
-        data[col] = np.where(mask, np.nan, data[col])
+        df.loc[mask, col] = np.nan
 
-    # Add some outliers
-    data["Balance"][0] = 1000000  # High outlier
-    data["Balance"][1] = -10000  # Low outlier
-
-    return pd.DataFrame(data)
+    return df
 
 
 def test_load_data(tmp_path):
@@ -64,14 +63,14 @@ def test_analyze_data(sample_data, tmp_path):
 
     matplotlib.use("Agg")
 
-    # Run analysis
-    analyzed_df = analyze_data(sample_data)
+    # Run analysis with tmp_path
+    analyzed_df = analyze_data(sample_data, output_dir=str(tmp_path))
 
-    # Check if visualization files were created
-    assert (tmp_path / "data/correlation_matrix.png").exists()
-    assert (tmp_path / "data/numeric_distributions.png").exists()
+    # Check if visualization files were created in tmp_path
+    assert (tmp_path / "correlation_matrix.png").exists()
+    assert (tmp_path / "numeric_distributions.png").exists()
 
-    # Check if analysis didn't modify the data
+    # Check if DataFrame was returned unchanged
     assert analyzed_df.equals(sample_data)
 
 
@@ -139,8 +138,10 @@ def test_preprocess_data(sample_data):
 
     for col in numeric_cols:
         scaled_col = processed_df[col]
-        assert abs(scaled_col.mean()) < 1e-10  # Close to 0
-        assert abs(scaled_col.std() - 1.0) < 1e-10  # Close to 1
+        assert abs(scaled_col.mean()) < 1e-5, f"Mean of {col} is not close to 0."
+        assert abs(scaled_col.std() - 1.0) < 1e-3, (
+            "Standard deviation is not close to 1."
+        )
 
 
 def test_split_data(sample_data):

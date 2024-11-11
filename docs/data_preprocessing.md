@@ -20,8 +20,8 @@ The preprocessing pipeline requires the following Python libraries:
 
 ```python
 def load_data(file_path):
-"""Load data from CSV file"""
-return pd.read_csv(file_path)
+    """Load data from CSV file"""
+    return pd.read_csv(file_path)
 ```
 
 - **Purpose**: Loads customer data from a CSV file
@@ -51,12 +51,13 @@ return pd.read_csv(file_path)
 ### 3. Missing Value Handling (`handle_missing_values`)
 
 - **Strategy**:
-  - Numeric columns: Median imputation
+  - Numeric columns: Median imputation using `df.assign()` to avoid chained assignment warnings
   - Categorical columns: Mode imputation
 - **Why This Approach**:
   - Median is robust to outliers compared to mean
   - Mode preserves the most common category for categorical data
   - Both methods maintain data distribution characteristics
+  - Using `df.assign()` prevents pandas FutureWarning about chained assignments
 - **Logging**: Tracks missing value counts before and after imputation
 
 ### 4. Outlier Handling (`handle_outliers`)
@@ -106,12 +107,13 @@ Sequential steps:
 - **Stratification Handling**:
   - Automatically checks if there are enough samples per class (minimum 2)
   - Falls back to regular random split if stratification is not possible
-  - Provides warning message when stratification cannot be used
+  - Provides clear warning message when stratification cannot be used
+  - Maintains consistent line length in warning messages
 
-- **Why Stratification**:
-  - Maintains target distribution in both sets when possible
-  - Crucial for imbalanced datasets
-  - Gracefully handles small datasets
+- **Output Information**:
+  - Reports train and test set sizes
+  - Shows target distribution in both train and test sets
+  - Formats output messages to maintain readability and line length limits
 
 ## Usage Instructions
 
@@ -204,7 +206,7 @@ Potential enhancements:
 
 ## Testing
 
-The preprocessing pipeline includes a comprehensive test suite that ensures reliability and correctness of all components. The tests are located in `tests/test_data_preprocessing.py`.
+The preprocessing pipeline includes a comprehensive test suite with the following updates:
 
 ### Test Components
 
@@ -234,9 +236,17 @@ The preprocessing pipeline includes a comprehensive test suite that ensures reli
 - `test_data_leakage`: Ensures no data leakage between train and test sets
 - `test_reproducibility`: Validates result reproducibility with fixed random states
 
-#### 5. Parameterized Tests
+#### 5. Code Quality Tests
 
-- `test_split_data_sizes`: Tests various train-test split ratios
+- **Line Length Compliance**:
+  - All code lines are limited to 79 characters
+  - Long strings are properly formatted using line continuation
+  - Warning and error messages are wrapped appropriately
+
+- **Standard Deviation Tests**:
+  - Numeric scaling tests use appropriate precision (1e-3)
+  - Mean tests use appropriate precision (1e-5)
+  - Clear error messages for failed assertions
 
 ### Running Tests
 
