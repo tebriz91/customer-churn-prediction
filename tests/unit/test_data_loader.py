@@ -1,0 +1,3 @@
+def test_load_data(tmp_path):
+    """Test data loading functionality"""
+    # ... existing test code ...

@@ -9,9 +9,8 @@ __pycache__/
 # Distribution / packaging
 .Python
 # ignore data folder except for customer_data.csv
-data/
-!data/customer_data.csv
-models/
+/data/
+!/data/customer_data.csv
 build/
 develop-eggs/
 dist/

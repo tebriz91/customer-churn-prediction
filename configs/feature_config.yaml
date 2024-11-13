@@ -1,0 +1,17 @@
+numeric_features:
+  - Age
+  - Balance
+  - EstimatedSalary
+  - NumOfProducts
+  - Tenure
+
+categorical_features:
+  - Gender
+  - Geography
+  - HasCrCard
+  - IsActiveMember
+
+derived_features:
+  - balance_per_product
+  - tenure_age_ratio
+  - activity_score 

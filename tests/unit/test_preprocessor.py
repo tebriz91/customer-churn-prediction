@@ -1,0 +1,3 @@
+def test_handle_missing_values(sample_data):
+    """Test missing values handling"""
+    # ... existing test code ...
