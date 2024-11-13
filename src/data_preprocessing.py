@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+logger = logging.getLogger(__name__)
 
 
 def load_data(file_path: str) -> pd.DataFrame:
@@ -24,43 +25,69 @@ def load_data(file_path: str) -> pd.DataFrame:
 
 def analyze_data(df: pd.DataFrame, output_dir: str = "data") -> pd.DataFrame:
     """Analyze data and generate visualizations"""
-    logging.info("Starting detailed data analysis")
-
-    # Basic statistics
-    logging.info("Basic Statistics:")
-    logging.info("\n%s", df.describe(include="all"))
-    print()
-
-    # Missing values analysis
-    print("Missing Values Analysis:")
-    print(df.isnull().sum())
-    print()
-
-    print("Missing Values Percentage:")
-    print(df.isnull().sum() * 100 / len(df))
-    print()
+    logger.info("Starting detailed data analysis")
 
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
-    # Correlation matrix for numeric columns only
+    # Basic statistics and missing values analysis
+    logger.info("Basic Statistics:")
+    logger.info("\n%s", df.describe(include="all"))
+    logger.info("Missing Values Analysis:")
+    logger.info("\n%s", df.isnull().sum())
+    logger.info("Missing Values Percentage:")
+    logger.info("\n%s", df.isnull().sum() * 100 / len(df))
+
+    # Correlation matrix
     numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
     plt.figure(figsize=(10, 8))
-    sns.heatmap(df[numeric_cols].corr(), annot=True, cmap="coolwarm", fmt=".2f")
+    sns.heatmap(
+        df[numeric_cols].corr(),
+        annot=True,
+        cmap="coolwarm",
+        fmt=".2f",
+    )
     plt.title("Correlation Matrix")
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "correlation_matrix.png"))
     plt.close()
 
-    # Distribution plots for numeric features
+    # Scatter plots for most relevant numeric features
+    if "Churn" in df.columns:
+        # Calculate correlations with target
+        correlations = df[numeric_cols].corr()["Churn"].abs()
+        # Get top 6 most correlated features (excluding Churn itself)
+        top_features = correlations.nlargest(7)[1:7].index
+
+        # Create 2x3 subplot for top 6 features
+        plt.figure(figsize=(15, 10))
+        for i, col in enumerate(top_features, 1):
+            plt.subplot(2, 3, i)
+            plt.scatter(
+                df[col],
+                df["Churn"],
+                alpha=0.5,
+                c=df["Churn"],
+                cmap="coolwarm",
+            )
+            plt.xlabel(col)
+            plt.ylabel("Churn")
+            plt.title(f"{col} vs Churn\nCorr: {correlations[col]:.3f}")
+
+        plt.suptitle("Top 6 Features by Correlation with Churn", y=1.02)
+        plt.tight_layout()
+        plt.savefig(
+            os.path.join(output_dir, "feature_vs_target_scatter.png"),
+            bbox_inches="tight",
+        )
+        plt.close()
+
+    # Distribution plots
     numeric_columns = df.select_dtypes(include=["int64", "float64"]).columns
     n_cols = len(numeric_columns)
-
-    # Вычисляем оптимальное количество строк и столбцов для графиков
-    n_rows = (n_cols + 2) // 3  # Округляем вверх при делении на 3
+    n_rows = (n_cols + 2) // 3
 
     plt.figure(figsize=(15, 5 * n_rows))
-
     for i, column in enumerate(numeric_columns, 1):
         plt.subplot(n_rows, 3, i)
         sns.histplot(data=df, x=column, kde=True)
@@ -76,15 +103,15 @@ def analyze_data(df: pd.DataFrame, output_dir: str = "data") -> pd.DataFrame:
 
 def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
     """Handle missing values in the dataset"""
-    logging.info("Handling missing values...")
+    logger.info("Handling missing values...")
 
     # Get initial missing values count
     missing_counts = df.isnull().sum()
     missing_cols = missing_counts[missing_counts > 0]
 
     if len(missing_cols) > 0:
-        logging.info("Initial missing values per column:")
-        logging.info("\n%s", missing_cols)
+        logger.info("Initial missing values per column:")
+        logger.info("\n%s", missing_cols)
 
         # Numeric columns: fill with median
         numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
@@ -92,7 +119,7 @@ def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
             if col in numeric_cols:
                 median_value = df[col].median()
                 df = df.assign(**{col: df[col].fillna(median_value)})
-                logging.info(
+                logger.info(
                     "Filled %s missing values with median: %.2f", col, median_value
                 )
 
@@ -102,16 +129,16 @@ def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
             if col in categorical_cols:
                 mode_value = df[col].mode()[0]
                 df = df.assign(**{col: df[col].fillna(mode_value)})
-                logging.info("Filled %s missing values with mode: %s", col, mode_value)
+                logger.info("Filled %s missing values with mode: %s", col, mode_value)
 
-    logging.info("Remaining missing values: %d", df.isnull().sum().sum())
+    logger.info("Remaining missing values: %d", df.isnull().sum().sum())
     return df
 
 
 def handle_outliers(df: pd.DataFrame, numeric_cols: list) -> pd.DataFrame:
     """Handle outliers using IQR method"""
-    logging.info("Handling outliers...")
-    logging.info("Outlier Summary:")
+    logger.info("Handling outliers...")
+    logger.info("Outlier Summary:")
 
     for col in numeric_cols:
         Q1 = df[col].quantile(0.25)
@@ -134,14 +161,14 @@ def handle_outliers(df: pd.DataFrame, numeric_cols: list) -> pd.DataFrame:
         }
 
         # Log outlier statistics
-        logging.info("\n%s:", col)
-        logging.info(
+        logger.info("\n%s:", col)
+        logger.info(
             "  Total outliers: %d (%.1f%%)",
             stats["total_outliers"],
             stats["percentage"],
         )
-        logging.info("  Lower bound outliers: %d", stats["lower_outliers"])
-        logging.info("  Upper bound outliers: %d", stats["upper_outliers"])
+        logger.info("  Lower bound outliers: %d", stats["lower_outliers"])
+        logger.info("  Upper bound outliers: %d", stats["upper_outliers"])
 
         # Cap outliers
         df[col] = df[col].clip(lower=lower_bound, upper=upper_bound)
@@ -151,45 +178,53 @@ def handle_outliers(df: pd.DataFrame, numeric_cols: list) -> pd.DataFrame:
 
 def preprocess_data(df: pd.DataFrame) -> tuple[pd.DataFrame, StandardScaler]:
     """Preprocess data for modeling"""
-    logging.info("Starting preprocessing pipeline...")
+    logger.info("Starting preprocessing pipeline...")
 
     # Make a copy to avoid modifying original data
     df = df.copy()
 
     # Step 1: Analyze data
-    logging.info("Step 1: Analyzing data...")
+    logger.info("Step 1: Analyzing data...")
     df = analyze_data(df)
 
     # Step 2: Handle missing values
-    logging.info("Step 2: Handling missing values...")
+    logger.info("Step 2: Handling missing values...")
     df = handle_missing_values(df)
 
     # Step 3: Handle outliers before scaling
-    logging.info("Step 3: Handling outliers...")
+    logger.info("Step 3: Handling outliers...")
     numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
     numeric_cols = (
         numeric_cols.drop("Churn") if "Churn" in numeric_cols else numeric_cols
     )
     df = handle_outliers(df, numeric_cols=numeric_cols)
 
-    # Step 4: Convert categorical variables
-    logging.info("Step 4: Converting categorical variables...")
+    # Step 4: Convert categorical variables with OneHotEncoder
+    logger.info("Step 4: Converting categorical variables...")
     categorical_cols = df.select_dtypes(include=["object"]).columns
     if len(categorical_cols) > 0:
-        logging.info("Converting columns: %s", ", ".join(categorical_cols))
-        for col in categorical_cols:
-            dummies = pd.get_dummies(df[col], prefix=col)
-            df = pd.concat([df.drop(col, axis=1), dummies], axis=1)
+        logger.info("Converting columns: %s", ", ".join(categorical_cols))
+        encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+        encoded_data = encoder.fit_transform(df[categorical_cols])
+        encoded_feature_names = encoder.get_feature_names_out(categorical_cols)
+
+        df = pd.concat(
+            [
+                df.drop(categorical_cols, axis=1),
+                pd.DataFrame(encoded_data, columns=encoded_feature_names),
+            ],
+            axis=1,
+        )
 
     # Step 5: Scale numeric features
-    logging.info("Step 5: Scaling numeric features...")
+    logger.info("Step 5: Scaling numeric features...")
     if len(numeric_cols) > 0:
         scaler = StandardScaler()
         df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
-        logging.info("Scaled %d numeric features", len(numeric_cols))
+        logger.info("Scaled %d numeric features", len(numeric_cols))
         return df, scaler
 
-    logging.info("Preprocessing completed!")
+    logger.info("Preprocessing completed!")
     return df, None
 
 
@@ -221,13 +256,13 @@ def split_data(
         stratify=stratify,
     )
 
-    logging.info("Train set size: %d", len(X_train))
-    logging.info("Test set size: %d", len(X_test))
-    logging.info(
+    logger.info("Train set size: %d", len(X_train))
+    logger.info("Test set size: %d", len(X_test))
+    logger.info(
         "Target distribution in train:\n%s",
         y_train.value_counts(normalize=True).round(3),
     )
-    logging.info(
+    logger.info(
         "Target distribution in test:\n%s", y_test.value_counts(normalize=True).round(3)
     )
 
@@ -236,22 +271,22 @@ def split_data(
 
 if __name__ == "__main__":
     # Load data
-    logging.info("Loading data...")
+    logger.info("Loading data...")
     data = load_data("data/customer_data.csv")
 
     # Preprocess data
-    logging.info("Preprocessing data...")
+    logger.info("Preprocessing data...")
     processed_data, scaler = preprocess_data(data)
 
     # Split data
-    logging.info("Splitting data...")
+    logger.info("Splitting data...")
     X_train, X_test, y_train, y_test = split_data(processed_data, "Churn")
 
     # Save processed datasets
-    logging.info("Saving processed data...")
+    logger.info("Saving processed data...")
     X_train.to_csv("data/X_train.csv", index=False)
     X_test.to_csv("data/X_test.csv", index=False)
     y_train.to_csv("data/y_train.csv", index=False)
     y_test.to_csv("data/y_test.csv", index=False)
 
-    logging.info("Preprocessing completed successfully!")
+    logger.info("Preprocessing completed successfully!")
