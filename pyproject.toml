@@ -21,12 +21,12 @@ dev-dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/beautifulcode"]
+packages = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "-v --cov=beautifulcode"
+addopts = "-v --cov=src"
 pythonpath = ["src"]
 
 [build-system]
