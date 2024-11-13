@@ -37,16 +37,20 @@ def load_data(file_path):
   - Basic statistics (mean, std, quartiles)
   - Missing value analysis
   - Correlation matrix visualization
+  - Feature correlation with target visualization
   - Distribution plots for numeric features
 
 - **Outputs**:
   - `data/correlation_matrix.png`: Heatmap showing feature correlations
+  - `data/feature_vs_target_scatter.png`: Scatter plots of top 6 features vs target
   - `data/numeric_distributions.png`: Distribution plots for numeric features
 
 - **Why**: Understanding data distributions and relationships is crucial for:
   - Identifying potential data quality issues
   - Informing feature engineering decisions
   - Detecting potential biases in the dataset
+  - Understanding feature importance through correlation with target
+  - Visualizing potential non-linear relationships
 
 ### 3. Missing Value Handling (`handle_missing_values`)
 
