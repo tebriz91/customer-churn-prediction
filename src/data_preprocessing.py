@@ -176,12 +176,48 @@ def handle_outliers(df: pd.DataFrame, numeric_cols: list) -> pd.DataFrame:
     return df
 
 
+def plot_raw_data_issues(df: pd.DataFrame, output_dir: str = "data") -> None:
+    """Create plot highlighting missing values in raw data."""
+    logger.info("Creating plot to highlight missing values...")
+
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Create figure
+    plt.figure(figsize=(10, 6))
+
+    # Plot showing missing values
+    missing_data = (df.isnull().sum() / len(df)) * 100
+    missing_data.plot(kind="bar")
+    plt.title("Missing Values by Feature")
+    plt.xlabel("Features")
+    plt.ylabel("Missing Values (%)")
+    plt.xticks(rotation=45, ha="right")
+
+    plt.tight_layout()
+    plt.savefig(
+        os.path.join(output_dir, "raw_data_issues.png"), bbox_inches="tight", dpi=300
+    )
+    plt.close()
+
+    # Log summary statistics
+    logger.info("Missing values summary:")
+    for feature, pct in missing_data.items():
+        if pct > 0:
+            logger.info(f"  {feature}: {pct:.1f}%")
+
+    logger.info("Raw data quality plot saved to raw_data_issues.png")
+
+
 def preprocess_data(df: pd.DataFrame) -> tuple[pd.DataFrame, StandardScaler]:
     """Preprocess data for modeling"""
     logger.info("Starting preprocessing pipeline...")
 
     # Make a copy to avoid modifying original data
     df = df.copy()
+
+    # Plot raw data issues before preprocessing
+    plot_raw_data_issues(df)
 
     # Step 1: Analyze data
     logger.info("Step 1: Analyzing data...")
