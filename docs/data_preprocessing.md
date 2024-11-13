@@ -36,21 +36,46 @@ def load_data(file_path):
 - **Key Components**:
   - Basic statistics (mean, std, quartiles)
   - Missing value analysis
+  - Raw data quality visualization
   - Correlation matrix visualization
   - Feature correlation with target visualization
   - Distribution plots for numeric features
 
 - **Outputs**:
+  - `data/raw_data_issues.png`: Bar plot showing missing values by feature
   - `data/correlation_matrix.png`: Heatmap showing feature correlations
-  - `data/feature_vs_target_scatter.png`: Scatter plots of top 6 features vs target
+  - `data/feature_vs_target_scatter.png`: Top 6 features most correlated with target
   - `data/numeric_distributions.png`: Distribution plots for numeric features
 
-- **Why**: Understanding data distributions and relationships is crucial for:
-  - Identifying potential data quality issues
+- **Visualization Details**:
+  - Raw Data Quality Plot:
+    - Bar chart showing percentage of missing values for each feature
+    - Helps identify data completeness issues before preprocessing
+    - Provides clear visualization of which features need imputation
+    - Accompanied by detailed logging of missing value percentages
+
+  - Correlation Matrix:
+    - Heatmap showing relationships between all numeric features
+    - Annotated with correlation coefficients
+    - Uses coolwarm color scheme for better readability
+
+  - Feature vs Target Plots:
+    - Shows top 6 features most correlated with target variable
+    - Includes correlation coefficient in plot titles
+    - Color-coded by target value
+    - Organized in 2x3 grid for clear comparison
+
+  - Distribution Plots:
+    - Shows distribution of all numeric features
+    - Includes kernel density estimation (KDE)
+    - Automatically adjusts layout based on number of features
+
+- **Why**: Understanding data quality and relationships is crucial for:
+  - Identifying features requiring imputation
   - Informing feature engineering decisions
-  - Detecting potential biases in the dataset
   - Understanding feature importance through correlation with target
-  - Visualizing potential non-linear relationships
+  - Detecting potential biases in the dataset
+  - Planning appropriate preprocessing steps
 
 ### 3. Missing Value Handling (`handle_missing_values`)
 
