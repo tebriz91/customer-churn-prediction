@@ -8,6 +8,7 @@ data:
     - CreditScore
     - MonthlyCharges
     - TotalCharges
+    - NumTransactions
 
   categorical_features:
     - Gender
@@ -15,11 +16,22 @@ data:
     - HasCrCard
     - IsActiveMember
 
+  id_columns:
+    - CustomerID
+
   derived_features:
     - balance_salary_ratio
     - products_per_tenure
     - active_with_credit_card
-    - age_group
+
+  encoding:
+    one_hot_encode:
+      - Geography
+      - Gender
+    keep_categorical: []
+    encoding_reference:
+      Geography: ["Mexico", "USA"]
+      Gender: ["M"]  # Only M will be encoded, F is the reference category
 
 paths:
   data_dir: data

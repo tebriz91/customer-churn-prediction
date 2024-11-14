@@ -213,6 +213,35 @@ def generate_classification_report(
         raise
 
 
+def calculate_metrics(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    y_prob: Union[np.ndarray, None] = None,
+) -> Dict[str, float]:
+    """Calculate classification metrics.
+
+    Args:
+        y_true: True labels
+        y_pred: Predicted labels
+        y_prob: Prediction probabilities (optional)
+
+    Returns:
+        Dictionary containing various classification metrics
+    """
+    metrics = {
+        "accuracy": accuracy_score(y_true, y_pred),
+        "precision": precision_score(y_true, y_pred),
+        "recall": recall_score(y_true, y_pred),
+        "f1": f1_score(y_true, y_pred),
+    }
+
+    # Add ROC AUC if probabilities are provided
+    if y_prob is not None:
+        metrics["roc_auc"] = roc_auc_score(y_true, y_prob)
+
+    return metrics
+
+
 # # Usage example
 # from src.utils.metrics import generate_classification_report
 

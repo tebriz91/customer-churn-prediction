@@ -1,6 +1,6 @@
 """Model prediction module for the project."""
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import joblib
 import numpy as np
@@ -23,6 +23,7 @@ class ModelPredictor:
             model_path: Path to saved model file
         """
         self.model: Optional[BaseEstimator] = None
+        self.feature_names: Optional[List[str]] = None
         if model_path:
             self.load_model(model_path)
 
@@ -35,13 +36,36 @@ class ModelPredictor:
         try:
             logger.info(f"Loading model from {model_path}")
             self.model = joblib.load(model_path)
+            if hasattr(self.model, "feature_names_in_"):
+                self.feature_names = list(self.model.feature_names_in_)
         except Exception as e:
             logger.error(f"Error loading model: {str(e)}")
             raise
 
+    def _validate_features(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Ensure feature consistency between training and test data."""
+        if not hasattr(self, "feature_names") or not self.feature_names:
+            logger.warning("No feature names found in model. Proceeding with caution.")
+            return X
+
+        missing_cols = set(self.feature_names) - set(X.columns)
+        extra_cols = set(X.columns) - set(self.feature_names)
+
+        if missing_cols:
+            logger.warning(f"Adding missing columns: {missing_cols}")
+            for col in missing_cols:
+                X[col] = 0
+
+        if extra_cols:
+            logger.warning(f"Removing extra columns: {extra_cols}")
+            X = X.drop(columns=extra_cols)
+
+        # Ensure columns are in the same order as during training
+        return X[self.feature_names]
+
     def predict(
         self, X: Union[pd.DataFrame, np.ndarray], return_proba: bool = False
-    ) -> Union[np.ndarray, tuple[np.ndarray, np.ndarray]]:
+    ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
         """Make predictions using the loaded model.
 
         Args:
@@ -49,15 +73,20 @@ class ModelPredictor:
             return_proba: Whether to return probability estimates
 
         Returns:
-            Model predictions and optionally probability estimates
+            Model predictions and optionally probability estimates for positive class
         """
         if self.model is None:
             raise ValueError("No model loaded. Call load_model first.")
 
         try:
+            # Validate features if input is DataFrame
+            if isinstance(X, pd.DataFrame):
+                X = self._validate_features(X)
+
             predictions = self.model.predict(X)
             if return_proba and hasattr(self.model, "predict_proba"):
-                probabilities = self.model.predict_proba(X)
+                # Return only positive class probabilities (second column)
+                probabilities = self.model.predict_proba(X)[:, 1]
                 return predictions, probabilities
             return predictions
         except Exception as e:
@@ -65,22 +94,29 @@ class ModelPredictor:
             raise
 
     def evaluate(
-        self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]
-    ) -> Dict[str, float]:
+        self,
+        X: Union[pd.DataFrame, np.ndarray],
+        y: Union[pd.Series, np.ndarray, None] = None,
+    ) -> Optional[Dict[str, float]]:
         """Evaluate model performance on test data.
 
         Args:
             X: Feature matrix
-            y: True labels
+            y: True labels (optional for prediction-only scenarios)
 
         Returns:
-            Dictionary of evaluation metrics
+            Dictionary of evaluation metrics if y is provided, None otherwise
         """
         if self.model is None:
             raise ValueError("No model loaded. Call load_model first.")
 
         try:
             predictions = self.predict(X)
+
+            if y is None:
+                logger.warning("No target labels provided for evaluation")
+                return None
+
             metrics = calculate_metrics(y, predictions)
             logger.info("Model evaluation metrics:")
             for metric, value in metrics.items():

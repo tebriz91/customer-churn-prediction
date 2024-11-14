@@ -42,6 +42,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Evaluate predictions if true labels are available",
     )
+    parser.add_argument(
+        "--analyze-errors",
+        action="store_true",
+        help="Perform detailed error analysis if true labels are available",
+    )
     return parser.parse_args()
 
 
@@ -79,15 +84,9 @@ def make_predictions(
     model_path: str,
     output_dir: str,
     true_labels: pd.Series = None,
+    analyze_errors: bool = False,
 ) -> None:
-    """Make and optionally evaluate predictions.
-
-    Args:
-        X: Input features
-        model_path: Path to trained model
-        output_dir: Directory to save results
-        true_labels: True labels for evaluation (optional)
-    """
+    """Make and optionally evaluate predictions."""
     logger.info("Making predictions")
 
     # Create output directory
@@ -96,11 +95,13 @@ def make_predictions(
 
     # Load model and make predictions
     predictor = ModelPredictor(model_path)
-    predictions = predictor.predict(X)
-    probabilities = predictor.predict(X, return_proba=True)[1]
+    predictions, probabilities = predictor.predict(X, return_proba=True)
 
     # Save predictions
-    results = pd.DataFrame({"prediction": predictions, "probability": probabilities})
+    results = pd.DataFrame({
+        "prediction": predictions,
+        "probability": probabilities,
+    })
     results.to_csv(output_dir / "predictions.csv", index=False)
     logger.info(f"Saved predictions to {output_dir}/predictions.csv")
 
@@ -118,6 +119,7 @@ def make_predictions(
             true_labels,
             predictions,
             save_path=output_dir / "confusion_matrix.png",
+            labels=["Not Churned", "Churned"],
         )
 
         eval_plotter.plot_roc_curve(
@@ -136,6 +138,16 @@ def make_predictions(
         logger.info("\nEvaluation Results:")
         for metric, value in report["classification_metrics"].items():
             logger.info(f"{metric}: {value:.4f}")
+
+        # Perform error analysis if requested
+        if analyze_errors:
+            error_analysis = predictor.explain_predictions(
+                X[predictions != true_labels], feature_names=list(X.columns)
+            )
+            pd.DataFrame(
+                error_analysis.items(), columns=["Feature", "Importance"]
+            ).to_csv(output_dir / "error_analysis.csv", index=False)
+            logger.info(f"Error analysis saved to {output_dir}/error_analysis.csv")
 
 
 def main() -> None:
@@ -162,6 +174,7 @@ def main() -> None:
             args.model_path,
             args.output_dir,
             true_labels,
+            args.analyze_errors,
         )
 
         logger.info("Prediction pipeline completed successfully")
