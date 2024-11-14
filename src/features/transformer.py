@@ -1,6 +1,6 @@
 """Feature transformation module for the project."""
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 from sklearn.preprocessing import (
@@ -185,3 +185,25 @@ class FeatureTransformer:
         if self.feature_names_ is None:
             raise ValueError("Transformer has not been fitted yet")
         return self.feature_names_
+
+    def transform_all(
+        self, train_df: pd.DataFrame, test_df: Optional[pd.DataFrame] = None
+    ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
+        """Transform both training and test data.
+
+        Args:
+            train_df: Training DataFrame
+            test_df: Test DataFrame (optional)
+
+        Returns:
+            Tuple of transformed (train_df, test_df)
+        """
+        # Fit and transform training data
+        train_transformed = self.fit_transform(train_df)
+
+        # Transform test data if provided
+        test_transformed = None
+        if test_df is not None:
+            test_transformed = self.transform(test_df)
+
+        return train_transformed, test_transformed

@@ -67,8 +67,7 @@ beautifulcode/
 │
 ├── configs/            # Configuration files
 │   ├── model_config.yaml
-│   ├── feature_config.yaml
-│   └── logging_config.yaml
+│   └── feature_config.yaml
 │
 ├── scripts/           # Utility scripts
 │   ├── train.py      # Training script
@@ -140,7 +139,6 @@ beautifulcode/
 
 - `model_config.yaml`: Model hyperparameters
 - `feature_config.yaml`: Feature engineering settings
-- `logging_config.yaml`: Logging configuration
 
 ## Best Practices
 

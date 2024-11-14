@@ -1,3 +1,8 @@
+model:
+  random_state: 42
+  test_size: 0.2
+  n_splits: 5
+
 data:
   numeric_features:
     - Age
@@ -5,23 +10,18 @@ data:
     - EstimatedSalary
     - NumOfProducts
     - Tenure
-    - CreditScore
-    - MonthlyCharges
-    - TotalCharges
-
   categorical_features:
     - Gender
     - Geography
     - HasCrCard
     - IsActiveMember
-
+  target_column: Churn
   derived_features:
-    - balance_salary_ratio
-    - products_per_tenure
-    - active_with_credit_card
-    - age_group
+    - balance_per_product
+    - tenure_age_ratio
+    - activity_score
 
 paths:
   data_dir: data
-  output_dir: output
   models_dir: models
+  output_dir: output 
