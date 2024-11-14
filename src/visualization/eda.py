@@ -22,7 +22,7 @@ class EDAVisualizer:
         """
         self.config = config or Config()
         self.figure_size = (10, 6)
-        plt.style.use("seaborn")
+        plt.style.use(self.config.visualization.style)
 
     def plot_raw_data_issues(self, df: pd.DataFrame) -> plt.Figure:
         """Plot missing values and other data quality issues.

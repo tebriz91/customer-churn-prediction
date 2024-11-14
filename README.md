@@ -60,9 +60,7 @@ python scripts/preprocess_and_engineer.py \
 2. Model Training:
 
 ```bash
-python scripts/train.py --data-path data/processed/featured_data.csv \
-    --model-config configs/model_config.yaml \
-    --output-dir models/
+python scripts/train.py --data-path data/processed/featured_data.csv --model-config configs/model_config.yaml --output-dir models/
 ```
 
 3. Making Predictions:

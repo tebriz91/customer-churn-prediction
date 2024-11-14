@@ -8,6 +8,7 @@ import pandas as pd
 import seaborn as sns
 from sklearn.feature_selection import mutual_info_classif
 
+from src.utils.config import Config
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -16,14 +17,16 @@ logger = get_logger(__name__)
 class FeaturePlotter:
     """Class for creating feature-related visualizations."""
 
-    def __init__(self, figsize: tuple = (10, 6)):
+    def __init__(self, config: Optional[Config] = None, figsize: tuple = (10, 6)):
         """Initialize FeaturePlotter.
 
         Args:
+            config: Optional configuration object
             figsize: Default figure size for plots
         """
+        self.config = config or Config()
         self.figsize = figsize
-        plt.style.use("seaborn")
+        plt.style.use(self.config.visualization.style)
 
     def plot_feature_importance(
         self,

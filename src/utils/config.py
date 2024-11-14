@@ -15,6 +15,31 @@ class ModelConfig:
 
     name: str = "random_forest"
     params: Dict[str, Any] = field(default_factory=dict)
+    random_state: int = 42
+    param_grids: Dict[str, Dict[str, Any]] = field(
+        default_factory=lambda: {
+            "random_forest": {
+                "n_estimators": [100, 200, 300],
+                "max_depth": [10, 20, 30, None],
+                "min_samples_split": [2, 5, 10],
+                "min_samples_leaf": [1, 2, 4],
+                "class_weight": ["balanced", None],
+            },
+            "gradient_boosting": {
+                "n_estimators": [100, 200, 300],
+                "learning_rate": [0.01, 0.1, 0.3],
+                "max_depth": [3, 4, 5],
+                "min_samples_split": [2, 5],
+                "min_samples_leaf": [1, 2],
+            },
+            "logistic_regression": {
+                "C": [0.001, 0.01, 0.1, 1, 10],
+                "penalty": ["l2"],
+                "class_weight": ["balanced", None],
+                "solver": ["lbfgs"],
+            },
+        }
+    )
 
 
 @dataclass
@@ -57,12 +82,22 @@ class PathConfig:
 
 
 @dataclass
+class VisualizationConfig:
+    """Visualization configuration."""
+
+    style: str = "seaborn-v0_8"
+    figure_dpi: int = 300
+    figure_format: str = "png"
+
+
+@dataclass
 class Config:
     """Main configuration class."""
 
     model: ModelConfig = field(default_factory=ModelConfig)
     data: DataConfig = field(default_factory=DataConfig)
     paths: PathConfig = field(default_factory=PathConfig)
+    visualization: VisualizationConfig = field(default_factory=VisualizationConfig)
 
 
 def load_config(config_path: str) -> Config:
@@ -81,6 +116,7 @@ def load_config(config_path: str) -> Config:
             model=ModelConfig(**config_dict.get("model", {})),
             data=DataConfig(**config_dict.get("data", {})),
             paths=PathConfig(**config_dict.get("paths", {})),
+            visualization=VisualizationConfig(**config_dict.get("visualization", {})),
         )
 
         logger.info("Configuration loaded successfully")

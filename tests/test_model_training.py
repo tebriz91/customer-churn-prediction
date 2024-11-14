@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-
+from beautifulcode.config import Config
 from beautifulcode.model_training import ModelTrainer
 
 
@@ -24,7 +24,9 @@ def sample_data():
 @pytest.fixture
 def trainer():
     """Create a ModelTrainer instance."""
-    return ModelTrainer(random_state=42)
+    config = Config()
+    config.model.random_state = 42
+    return ModelTrainer(config=config)
 
 
 def test_model_initialization(trainer):

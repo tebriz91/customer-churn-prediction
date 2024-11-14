@@ -1,4 +1,3 @@
-import logging
 import warnings
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
@@ -20,13 +19,10 @@ from sklearn.model_selection import (
     cross_validate,
 )
 
-from utils.config import Config
+from src.utils.config import Config
+from src.utils.logger import get_logger
 
-# Configure logging
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ModelTrainer:
@@ -41,7 +37,11 @@ class ModelTrainer:
             "gradient_boosting": GradientBoostingClassifier(
                 random_state=self.random_state
             ),
-            "logistic_regression": LogisticRegression(random_state=self.random_state),
+            "logistic_regression": LogisticRegression(
+                random_state=self.random_state,
+                max_iter=1000,
+                n_jobs=-1,
+            ),
         }
         self.param_grids = self.config.model.param_grids
         self.best_model = None
@@ -63,7 +63,7 @@ class ModelTrainer:
 
         results = {}
         for model_name, model in self.models.items():
-            logger.info(f"Training {model_name}...")
+            logger.info(f"\nTraining {model_name}...\n")
             cv_results = cross_validate(
                 model, X_train, y_train, cv=n_splits, scoring=scoring
             )
@@ -113,16 +113,18 @@ class ModelTrainer:
         self.best_model = grid_search.best_estimator_
         return grid_search.best_estimator_, grid_search.best_params_
 
-    def save_model(self, model_path: str = "models/churn_model.pkl"):
-        """Save the trained model to disk."""
-        if self.best_model is None:
-            raise ValueError("No model has been trained yet")
+    def save_model(self, model_path: Path) -> None:
+        """Save model to disk.
 
-        model_dir = Path(model_path).parent
-        model_dir.mkdir(parents=True, exist_ok=True)
-
-        joblib.dump(self.best_model, model_path)
-        logger.info(f"Model saved to {model_path}")
+        Args:
+            model_path: Path to save the model
+        """
+        try:
+            joblib.dump(self.best_model, model_path)
+            logger.info(f"Model saved to {model_path}")
+        except Exception as e:
+            logger.error(f"Error saving model: {str(e)}")
+            raise
 
     def explain_model(self, X_train: pd.DataFrame, y_train: pd.Series):
         """Explain the model using LIME."""
@@ -185,7 +187,7 @@ def main():
         trainer.optimize_model(X_train, y_train, best_model_name)
 
         # Save the model
-        trainer.save_model()
+        trainer.save_model(Path("models/churn_model.pkl"))
 
         # Explain the best model
         trainer.explain_model(X_train, y_train)

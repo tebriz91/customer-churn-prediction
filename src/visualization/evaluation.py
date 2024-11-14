@@ -1,5 +1,12 @@
 """Model evaluation visualization module."""
 
+import warnings
+
+import matplotlib
+
+matplotlib.use("Agg")  # Set non-interactive backend
+
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import matplotlib.pyplot as plt
@@ -13,47 +20,46 @@ from sklearn.metrics import (
     roc_curve,
 )
 
+from src.utils.config import Config
 from src.utils.logger import get_logger
 
+# Configure logger
 logger = get_logger(__name__)
 
 
 class ModelEvaluationPlotter:
     """Class for creating model evaluation visualizations."""
 
-    def __init__(self, figsize: tuple = (10, 6)):
+    def __init__(self, config: Optional[Config] = None, figsize: tuple = (10, 6)):
         """Initialize ModelEvaluationPlotter.
 
         Args:
+            config: Optional configuration object
             figsize: Default figure size for plots
         """
+        self.config = config or Config()
         self.figsize = figsize
-        plt.style.use("seaborn")
+
+        # Suppress matplotlib warnings
+        plt.style.use(self.config.visualization.style)
+        warnings.filterwarnings("ignore", category=UserWarning)
+
+        # Close any existing plots
+        plt.close("all")
 
     def plot_confusion_matrix(
         self,
         y_true: np.ndarray,
         y_pred: np.ndarray,
-        labels: Optional[List[str]] = None,
         title: str = "Confusion Matrix",
-        save_path: Optional[str] = None,
-    ) -> plt.Figure:
-        """Plot confusion matrix as a heatmap.
-
-        Args:
-            y_true: True labels
-            y_pred: Predicted labels
-            labels: Class labels
-            title: Plot title
-            save_path: Path to save the plot
-
-        Returns:
-            Matplotlib figure object
-        """
+        save_path: Optional[Path] = None,
+        labels: List[str] = ["Not Churned", "Churned"],
+    ) -> None:
+        """Plot confusion matrix."""
         try:
+            plt.figure(figsize=(8, 6))
             cm = confusion_matrix(y_true, y_pred)
 
-            plt.figure(figsize=self.figsize)
             sns.heatmap(
                 cm,
                 annot=True,
@@ -64,18 +70,17 @@ class ModelEvaluationPlotter:
             )
 
             plt.title(title)
-            plt.xlabel("Predicted")
-            plt.ylabel("True")
+            plt.ylabel("True Label")
+            plt.xlabel("Predicted Label")
 
             if save_path:
                 plt.savefig(save_path, bbox_inches="tight", dpi=300)
-                logger.info(f"Saved confusion matrix plot to {save_path}")
-
-            return plt.gcf()
 
         except Exception as e:
             logger.error(f"Error plotting confusion matrix: {str(e)}")
             raise
+        finally:
+            plt.close("all")  # Ensure all figures are closed
 
     def plot_roc_curve(
         self,
@@ -83,19 +88,10 @@ class ModelEvaluationPlotter:
         y_prob: np.ndarray,
         title: str = "ROC Curve",
         save_path: Optional[str] = None,
-    ) -> plt.Figure:
-        """Plot ROC curve with AUC score.
-
-        Args:
-            y_true: True labels
-            y_prob: Predicted probabilities
-            title: Plot title
-            save_path: Path to save the plot
-
-        Returns:
-            Matplotlib figure object
-        """
+    ) -> None:
+        """Plot ROC curve with AUC score."""
         try:
+            plt.close("all")  # Clear any existing plots
             fpr, tpr, _ = roc_curve(y_true, y_prob)
             roc_auc = auc(fpr, tpr)
 
@@ -121,11 +117,11 @@ class ModelEvaluationPlotter:
                 plt.savefig(save_path, bbox_inches="tight", dpi=300)
                 logger.info(f"Saved ROC curve plot to {save_path}")
 
-            return plt.gcf()
-
         except Exception as e:
             logger.error(f"Error plotting ROC curve: {str(e)}")
             raise
+        finally:
+            plt.close("all")
 
     def plot_precision_recall_curve(
         self,

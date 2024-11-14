@@ -1,6 +1,7 @@
 """Training script for the customer churn prediction model."""
 
 import argparse
+import logging
 from pathlib import Path
 from typing import Tuple
 
@@ -17,6 +18,15 @@ from src.utils.metrics import generate_classification_report
 from src.visualization.evaluation import ModelEvaluationPlotter
 
 logger = get_logger(__name__)
+
+# Remove duplicate logging handlers if they exist
+for handler in logger.handlers[:]:
+    logger.removeHandler(handler)
+
+# Add a single handler
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+logger.addHandler(handler)
 
 
 def parse_args() -> argparse.Namespace:
@@ -94,7 +104,7 @@ def train_and_evaluate(
     X_test: pd.DataFrame,
     y_train: pd.Series,
     y_test: pd.Series,
-    config_path: str,
+    model_config_path: str,
     output_dir: str,
     random_state: int,
 ) -> None:
@@ -103,45 +113,44 @@ def train_and_evaluate(
     Args:
         X_train: Training features
         X_test: Test features
-        y_train: Training target
-        y_test: Test target
-        config_path: Path to model configuration
-        output_dir: Directory to save model artifacts
+        y_train: Training labels
+        y_test: Test labels
+        model_config_path: Path to model configuration
+        output_dir: Directory to save outputs
         random_state: Random state for reproducibility
     """
-    logger.info("Training and evaluating models")
-
-    # Load model configuration
-    config = load_config(config_path)
-
-    # Initialize trainer and train models
-    trainer = ModelTrainer(random_state=random_state)
-    models = trainer.train_and_evaluate_models(X_train, y_train)
-
-    # Create output directory
+    # Load configuration
+    config = load_config(model_config_path)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Initialize visualization
-    eval_plotter = ModelEvaluationPlotter()
+    # Initialize trainer and plotter
+    trainer = ModelTrainer(config=config)
+    eval_plotter = ModelEvaluationPlotter(config=config)
 
-    # Evaluate each model
-    for name, model_info in models.items():
-        model = model_info["model"]
+    logger.info("Starting model training and evaluation...")
 
-        # Make predictions
-        y_pred = model.predict(X_test)
-        y_prob = model.predict_proba(X_test)[:, 1]
+    # Train and evaluate each model
+    for name in config.model.param_grids.keys():
+        logger.info(f"\nTraining {name}...\n")
 
-        # Generate and save evaluation report
+        # Train and optimize model
+        trained_model, best_params = trainer.optimize_model(X_train, y_train, name)
+
+        # Get predictions
+        y_pred = trained_model.predict(X_test)
+        y_prob = trained_model.predict_proba(X_test)[:, 1]
+
+        # Generate evaluation report
         report = generate_classification_report(y_test, y_pred, y_prob)
 
-        # Save evaluation plots
+        # Create evaluation plots
         eval_plotter.plot_confusion_matrix(
             y_test,
             y_pred,
             title=f"Confusion Matrix - {name}",
             save_path=output_dir / f"{name}_confusion_matrix.png",
+            labels=["Not Churned", "Churned"],
         )
 
         eval_plotter.plot_roc_curve(
@@ -160,11 +169,13 @@ def train_and_evaluate(
 
         # Save model and metrics
         model_path = output_dir / f"{name}_model.joblib"
-        trainer.save_model(model, model_path)
+        trainer.model = trained_model
+        trainer.save_model(model_path)
 
         logger.info(f"\nEvaluation results for {name}:")
         for metric, value in report["classification_metrics"].items():
             logger.info(f"{metric}: {value:.4f}")
+        logger.info(f"Best parameters: {best_params}")
 
 
 def main() -> None:
