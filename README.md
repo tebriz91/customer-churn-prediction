@@ -137,5 +137,9 @@ Run the test suite:
 
 ```bash
 pytest
-pytest --cov=src  # With coverage report
+```
+
+```bash
+# With coverage report
+pytest --cov=src
 ```

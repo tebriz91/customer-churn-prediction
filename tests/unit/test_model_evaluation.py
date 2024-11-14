@@ -1,9 +1,20 @@
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 from src.model_evaluation import ModelEvaluator
+
+
+@pytest.fixture
+def sample_model():
+    """Create a simple trained model for testing."""
+    model = RandomForestClassifier(n_estimators=2, random_state=42)
+    X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+    y = np.array([0, 1, 0, 1])
+    model.fit(X, y)
+    return model
 
 
 @pytest.fixture
@@ -32,10 +43,13 @@ def test_calculate_metrics(sample_predictions):
     assert 0 <= f1 <= 1
 
 
-def test_generate_classification_report(sample_predictions):
+def test_generate_classification_report(sample_predictions, monkeypatch, sample_model):
     """Test classification report generation"""
     y_true, y_pred, _ = sample_predictions
+
+    # Create evaluator with mocked model
     evaluator = ModelEvaluator()
+    evaluator.model = sample_model  # Replace the model directly
 
     report = evaluator.generate_report(y_true, y_pred)
     assert isinstance(report, str)
@@ -44,7 +58,7 @@ def test_generate_classification_report(sample_predictions):
     assert "f1-score" in report
 
 
-def test_error_analysis(sample_predictions):
+def test_error_analysis(sample_predictions, sample_model):
     """Test error analysis functionality"""
     y_true, y_pred, _ = sample_predictions
 
@@ -54,10 +68,30 @@ def test_error_analysis(sample_predictions):
         "feature2": [0.1, 0.2, 0.3, 0.4, 0.5],
     })
 
+    # Create evaluator with mocked model
     evaluator = ModelEvaluator()
-    error_analysis = evaluator.analyze_errors(X, y_true, y_pred)
+    evaluator.model = sample_model  # Replace the model directly
+    evaluator.feature_names = X.columns  # Set feature names to match test data
+
+    error_analysis = evaluator.analyze_errors(X, y_true)
 
     assert isinstance(error_analysis, pd.DataFrame)
     assert "actual" in error_analysis.columns
     assert "predicted" in error_analysis.columns
-    assert len(error_analysis) == sum(y_true != y_pred)
+    assert len(error_analysis) == sum(y_true != evaluator.model.predict(X))
+
+
+def test_model_evaluator_initialization(sample_model, tmp_path):
+    """Test ModelEvaluator initialization with a saved model"""
+    import joblib
+
+    # Save the sample model to a temporary file
+    model_path = tmp_path / "test_model.pkl"
+    joblib.dump(sample_model, model_path)
+
+    # Initialize evaluator with the saved model
+    evaluator = ModelEvaluator(model_path=str(model_path))
+
+    assert evaluator.model is not None
+    assert hasattr(evaluator.model, "predict")
+    assert hasattr(evaluator.model, "predict_proba")
