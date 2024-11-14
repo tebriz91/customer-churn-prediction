@@ -63,6 +63,8 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2024.2
     # via pandas
+pyyaml==6.0.2
+    # via beautifulcode (pyproject.toml)
 scikit-image==0.24.0
     # via lime
 scikit-learn==1.5.2
